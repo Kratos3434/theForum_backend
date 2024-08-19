@@ -23,12 +23,21 @@ class VerificationToken {
             const verificationToken = await prisma.verificationToken.findFirst({
                 where: {
                     token
+                },
+                include: {
+                    user: {
+                        select: {
+                            verified: true
+                        }
+                    }
                 }
             });
 
-            if (!verificationToken) throw {expired: false, error: "Verification Token token is invalid!"};
+            if (!verificationToken) throw {expired: false, error: "Verification Token token is invalid!", verified: false};
 
-            if (VerificationToken.isOneDayOld(verificationToken.createdAt)) throw {expired: true, error: "This link expired: You waited too long to verify. Please resend to get a new link"};
+            if (verificationToken.user.verified) throw { expired: false, error: "Already verified", verified: true };
+
+            if (VerificationToken.isOneDayOld(verificationToken.createdAt)) throw {expired: true, error: "This link expired: You waited too long to verify. Please resend to get a new link", verified: false};
 
             next();
         } catch (err: any) {
@@ -38,7 +47,7 @@ class VerificationToken {
                 Httpstatus = 403;
             }
 
-            res.status(Httpstatus).json({status: false, expired: err.expired, error: err.error});
+            res.status(Httpstatus).json({status: false, expired: err.expired, error: err.error, verified: err.verified});
         }
     }
 }
