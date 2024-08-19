@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Email from './Email';
 
@@ -119,6 +121,64 @@ class User {
             if (!user) throw "Error while verifying user";
 
             res.status(200).json({status: true, message: "User verified"});
+        } catch (err) {
+            res.status(400).json({status: false, error: err});
+        }
+    }
+
+    public static async login(req: Request, res: Response) {
+        try {
+            const { usernameOrEmail, password } = req.body;
+
+            if (!usernameOrEmail) throw "Username or email is required";
+            if (!password) throw "Password is required";
+
+            const user = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        {
+                            email: usernameOrEmail
+                        },
+                        {
+                            username: usernameOrEmail
+                        }
+                    ]
+                }
+            });
+
+            if (!user) throw "Incorrect username/email or password";
+
+            const result = await bcrypt.compare(password, user.password);
+
+            if (!result) throw "Incorrect username/email or password";
+
+            const privateKey = fs.readFileSync(`privateKey.key`);
+            const token = jwt.sign(user, privateKey, {
+              expiresIn: '1d',
+              algorithm: 'RS256'
+            });
+
+            res.cookie("token", token, {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                secure: true
+            });
+
+            const userProfile = await prisma.userProfile.findUnique({
+                where: {
+                    userId: user.id
+                },
+                include: {
+                    user: {
+                        select: {
+                            email: true,
+                            username: true
+                        }
+                    }
+                }
+            });
+
+            res.status(200).json({status: true, data: userProfile});
         } catch (err) {
             res.status(400).json({status: false, error: err});
         }
