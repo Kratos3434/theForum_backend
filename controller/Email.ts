@@ -13,7 +13,7 @@ class Email {
     public static async sendLink(to: string, url: string) {
         const mailOptions = {
             from: 'keithcarlos34@gmail.com',
-            to: 'keithcarlos34@gmail.com',
+            to,
             subject: "Verify email",
             html: `
                 <small>Dear ${to}</small>,

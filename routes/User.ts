@@ -6,6 +6,6 @@ const router = Router();
 
 router.get("/list", User.list);
 router.post("/signup", User.signup);
-router.post("/verify", VerificationToken.verifyToken, User.verify);
+router.post("/verify/:token", VerificationToken.verifyToken, User.verify);
 
 export default router;

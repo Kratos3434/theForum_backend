@@ -32,7 +32,7 @@ class VerificationToken {
                     }
                 }
             });
-
+            //console.log(verificationToken);
             if (!verificationToken) throw {expired: false, error: "Verification Token token is invalid!", verified: false};
 
             if (verificationToken.user.verified) throw { expired: false, error: "Already verified", verified: true };

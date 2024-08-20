@@ -118,6 +118,15 @@ class User {
                 }
             });
 
+            await prisma.userProfile.update({
+                where: {
+                    userId: user.id
+                },
+                data: {
+                    updatedAt: new Date()
+                } 
+            });
+
             if (!user) throw "Error while verifying user";
 
             res.status(200).json({status: true, message: "User verified"});
