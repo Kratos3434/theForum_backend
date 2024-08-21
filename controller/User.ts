@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
@@ -138,7 +138,7 @@ class User {
     public static async login(req: Request, res: Response) {
         try {
             const { usernameOrEmail, password } = req.body;
-
+            console.log(req.body);
             if (!usernameOrEmail) throw "Username or email is required";
             if (!password) throw "Password is required";
 
@@ -161,8 +161,10 @@ class User {
 
             if (!result) throw "Incorrect username/email or password";
 
+            if (!user.verified) throw "Account not verified, please check your inbox for the verification link";
+
             const privateKey = fs.readFileSync(`privateKey.key`);
-            const token = jwt.sign(user, privateKey, {
+            const token = jwt.sign({email: user.email, username: user.username, id: user.id, verified: user.verified}, privateKey, {
               expiresIn: '1d',
               algorithm: 'RS256'
             });
@@ -190,6 +192,79 @@ class User {
             res.status(200).json({status: true, data: userProfile});
         } catch (err) {
             res.status(400).json({status: false, error: err});
+        }
+    }
+
+    public static validateToken(req: Request, res: Response, next: NextFunction) {
+        try {
+            if (!req.headers.authorization) {
+                throw "Unauthorized";
+            }
+
+            const bearerToken = req.headers.authorization.split(' ')[1];
+
+            if (bearerToken == "undefined") throw "Unauthorized";
+
+            const privateKey = fs.readFileSync(`privateKey.key`);
+            const result = jwt.verify(bearerToken, privateKey);
+
+            if (!result) throw "Unauthorized";
+            next();
+        } catch (err) {
+            res.status(401).json({status: false, error: err});
+        }
+    }
+
+    //Use exclusiveliy with the middleware
+    public static async getCurrent(req: Request, res: Response) {
+        try {
+            if (!req.headers.authorization) {
+                throw "Unauthorized";
+            }
+
+            const bearerToken = req.headers.authorization.split(' ')[1];
+
+            if (bearerToken == "undefined") throw "Unauthorized";
+
+            const privateKey = fs.readFileSync(`privateKey.key`);
+            const result: any = jwt.verify(bearerToken, privateKey);
+
+            if (!result.email) throw "Unauthorized";
+            if (!result.username) throw "Unauthorized";
+
+            const user = await prisma.userProfile.findFirst({
+                where: {
+                    AND: [
+                        {
+                            user: {
+                                email: result.email
+                            }
+                        },
+                        {
+                            user: {
+                                username: result.username
+                            }
+                        }
+                    ]
+                },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                            email: true,
+                            verified: true
+                        }
+                    },
+                    
+                }
+            });
+
+            if (!user) throw "Unauthorized";
+            if (!user.user.verified) throw "Unverified";
+
+            res.status(200).json({status: true, data: user, message: "authorized"});
+        } catch (err) {
+            res.status(401).json({status: false, error: err});
         }
     }
 }
