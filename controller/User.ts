@@ -50,8 +50,8 @@ class User {
                 }
             });
 
-            if (user && user.email) throw "This email have already been taken";
-            if (user && user.username) throw "This username have already been taken";
+            if (user && user.email === email) throw "This email have already been taken";
+            if (user && user.username === username) throw "This username have already been taken";
 
             //encrypt the password
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -265,6 +265,39 @@ class User {
             res.status(200).json({status: true, data: user, message: "authorized"});
         } catch (err) {
             res.status(401).json({status: false, error: err});
+        }
+    }
+
+    public static async getByUsername(req: Request, res: Response) {
+        try {
+            const { username } = req.params;
+
+            if (!username) throw "Username is missing";
+
+            const user = await prisma.userProfile.findFirst({
+                where: {
+                    user: {
+                        username
+                    }
+                },
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                            email: true,
+                            verified: true
+                        }
+                    },
+                    
+                }
+            });
+
+            if (!user) throw "User does not exist";
+            if (!user.user.verified) throw "User is unverified";
+
+            res.status(200).json({status: true, data: user});
+        } catch (err) {
+            res.status(400).json({status: false, error: err});
         }
     }
 }

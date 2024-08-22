@@ -10,5 +10,6 @@ router.post("/verify/:token", VerificationToken.verifyToken, User.verify);
 router.post("/login", User.login);
 router.get("/validate", User.validateToken, (req, res) => res.status(200).json({status: true, message: "authorized"}));
 router.get("/current", User.validateToken, User.getCurrent);
+router.get("/profile/:username", User.getByUsername);
 
 export default router;
