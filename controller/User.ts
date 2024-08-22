@@ -27,6 +27,15 @@ class User {
         }
     }
 
+    public static authenticate(bearerToken?: string) {
+        if (bearerToken === "undefined" || !bearerToken) {
+            throw "Invalid";
+          } 
+        
+          const privateKey = fs.readFileSync(`privateKey.key`);
+          return jwt.verify(bearerToken, privateKey);
+    }
+
     public static async signup(req: Request, res: Response) {
         try {
             const { email, username, password, password2 } = req.body;
@@ -197,16 +206,7 @@ class User {
 
     public static validateToken(req: Request, res: Response, next: NextFunction) {
         try {
-            if (!req.headers.authorization) {
-                throw "Unauthorized";
-            }
-
-            const bearerToken = req.headers.authorization.split(' ')[1];
-
-            if (bearerToken == "undefined") throw "Unauthorized";
-
-            const privateKey = fs.readFileSync(`privateKey.key`);
-            const result = jwt.verify(bearerToken, privateKey);
+            const result = User.authenticate(req.headers.authorization?.split(' ')[1]);
 
             if (!result) throw "Unauthorized";
             next();

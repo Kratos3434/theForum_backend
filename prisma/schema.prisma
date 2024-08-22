@@ -31,6 +31,11 @@ model UserProfile {
   picture String @default("https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg")
   coverPicture String @default("https://trusteid.mioa.gov.mk/wp-content/plugins/uix-page-builder/uixpb_templates/images/UixPageBuilderTmpl/default-cover-4.jpg")
   userId Int @unique
+  posts Post[]
+  moderating ChannelModerator[]
+  channels ChannelMember[]
+  likes Like[]
+  dislikes Dislike[]
   createdAt DateTime @default(now())
   updatedAt DateTime?
 }
@@ -40,6 +45,75 @@ model VerificationToken {
   token String
   userId Int @unique
   user User @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+}
+
+model Post {
+  id Int @id @default(autoincrement())
+  title String
+  description String?
+  media String?
+  authorId Int
+  likes Like[]
+  dislikes Dislike[]
+  author UserProfile @relation(fields: [authorId], references: [userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+}
+
+model Channel {
+  id Int @id @default(autoincrement())
+  name String @unique
+  description String?
+  picture String @default("https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg")
+  coverPicture String @default("https://trusteid.mioa.gov.mk/wp-content/plugins/uix-page-builder/uixpb_templates/images/UixPageBuilderTmpl/default-cover-4.jpg")
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+  moderators ChannelModerator[]
+  members ChannelMember[]
+}
+
+model ChannelModerator {
+  userId Int
+  channelId Int
+  user UserProfile @relation(fields: [userId], references: [userId])
+  channel Channel @relation(fields: [channelId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+
+  @@id([userId, channelId])
+}
+
+model ChannelMember {
+  userId Int
+  channelId Int
+  user UserProfile @relation(fields: [userId], references: [userId])
+  channel Channel @relation(fields: [channelId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+
+  @@id([userId, channelId])
+}
+
+model Like {
+  id Int @id @default(autoincrement())
+  likerId Int
+  liker UserProfile @relation(fields: [likerId], references: [userId])
+  postId Int
+  post Post @relation(fields: [postId], references: [id])
+  total Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+}
+
+model Dislike {
+  id Int @id @default(autoincrement())
+  dislikerId Int
+  disliker UserProfile @relation(fields: [dislikerId], references: [userId])
+  postId Int
+  post Post @relation(fields: [postId], references: [id])
+  total Int
   createdAt DateTime @default(now())
   updatedAt DateTime?
 }
