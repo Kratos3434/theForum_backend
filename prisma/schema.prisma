@@ -72,6 +72,7 @@ model Channel {
   updatedAt DateTime?
   moderators ChannelModerator[]
   members ChannelMember[]
+  topics ChannelTopic[]
 }
 
 model ChannelModerator {
@@ -116,4 +117,23 @@ model Dislike {
   total Int
   createdAt DateTime @default(now())
   updatedAt DateTime?
+}
+
+model Topic {
+  id Int @id @default(autoincrement())
+  name String
+  channels ChannelTopic[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+}
+
+model ChannelTopic {
+  topicId Int
+  channelId Int
+  topic Topic @relation(fields: [topicId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+
+  @@id([topicId, channelId])
 }

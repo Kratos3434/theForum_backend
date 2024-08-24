@@ -6,6 +6,7 @@ import verificationTokenRoute from './routes/VerificationToken';
 import postRoute from './routes/Post';
 import cookieParser from 'cookie-parser';
 import cloud from 'cloudinary';
+import topicRoute from './routes/Topic';
 
 const cloudinary = cloud.v2;
 
@@ -28,6 +29,7 @@ app.use(cookieParser());
 app.use("/v1/user", userRoute);
 app.use("/v1/verificationToken", verificationTokenRoute);
 app.use("/v1/post", postRoute);
+app.use("/v1/topic", topicRoute);
 
 app.get("/", (req, res) => {
     res.send("Hello, World");
